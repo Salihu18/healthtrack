@@ -1,0 +1,25 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+.pub/
+build/
+
+# Android
+android/.gradle/
+android/app/build/
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/
+
+# MacOS / Windows junk
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Firebase
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
