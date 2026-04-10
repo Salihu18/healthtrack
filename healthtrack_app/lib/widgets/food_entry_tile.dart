@@ -20,7 +20,7 @@ class FoodEntryTile extends StatelessWidget {
         Container(
           width: 44, height: 44,
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.15),
+            color: AppColors.primary.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12)),
           child: const Icon(Icons.restaurant, color: AppColors.primary, size: 20),
         ),

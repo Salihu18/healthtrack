@@ -41,6 +41,7 @@ class _WeightTrackScreenState extends State<WeightTrackScreen> {
     if (mounted) context.read<UserProvider>().updateWeight(val);
 
     _weightCtrl.clear();
+     if (!mounted) return;
     FocusScope.of(context).unfocus();
 
     if (mounted) {
@@ -154,7 +155,7 @@ class _WeightTrackScreenState extends State<WeightTrackScreen> {
                         dotData:     FlDotData(show: reversed.length <= 14),
                         belowBarData: BarAreaData(
                           show:  true,
-                          color: AppColors.primary.withOpacity(0.12)),
+                          color: AppColors.primary.withValues(alpha: 0.12)),
                       ),
                     ],
                   ),
@@ -206,7 +207,7 @@ class _WeightTrackScreenState extends State<WeightTrackScreen> {
                           Container(
                             width: 44, height: 44,
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.12),
+                              color: AppColors.primary.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(12)),
                             child: const Icon(
                               Icons.monitor_weight_outlined,
@@ -235,8 +236,8 @@ class _WeightTrackScreenState extends State<WeightTrackScreen> {
                                 horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
                                 color: diff <= 0
-                                  ? AppColors.success.withOpacity(0.15)
-                                  : AppColors.danger.withOpacity(0.15),
+                                  ? AppColors.success.withValues(alpha: 0.15)
+                                  : AppColors.danger.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(8)),
                               child: Text(
                                 '${diff > 0 ? '+' : ''}${diff.toStringAsFixed(1)}',

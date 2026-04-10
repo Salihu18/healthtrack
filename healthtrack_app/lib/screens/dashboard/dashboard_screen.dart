@@ -62,10 +62,10 @@ class DashboardScreen extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.primary.withOpacity(0.2),
-                             AppColors.primary.withOpacity(0.05)]),
+                    colors: [AppColors.primary.withValues(alpha: 0.2),
+                             AppColors.primary.withValues(alpha: 0.05)]),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                 ),
                 child: Row(children: [
                   const Text('🤖', style: TextStyle(fontSize: 18)),
@@ -194,9 +194,9 @@ class _ActionBtn extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 18),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.4))),
+            border: Border.all(color: color.withValues(alpha: 0.4))),
           child: Column(children: [
             Icon(icon, color: color, size: 28),
             const SizedBox(height: 8),
