@@ -8,7 +8,7 @@ import '../../widgets/stat_card.dart';
 import '../../widgets/health_score_ring.dart';
 import '../food/food_log_screen.dart';
 import '../weight/weight_track_screen.dart';
-import '../../services/auth_service.dart';
+import '../setup/settings_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -40,15 +40,34 @@ class DashboardScreen extends StatelessWidget {
             style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
         ]),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: AppColors.textSecondary),
-            onPressed: () async {
-              context.read<UserProvider>().clear();
-              context.read<FoodProvider>().clear();
-              await AuthService().logout();
-            },
+  Padding(
+    padding: const EdgeInsets.only(right: 12),
+
+    child: GestureDetector(
+      onTap: () {
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const SettingsScreen(),
           ),
-        ],
+        );
+
+      },
+
+      child: CircleAvatar(
+        radius: 18,
+        backgroundColor: AppColors.card,
+
+        child: const Icon(
+          Icons.person,
+          color: AppColors.textSecondary,
+          size: 20,
+        ),
+      ),
+    ),
+  ),
+],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

@@ -101,4 +101,14 @@ class FirestoreService {
       .get();
     return snap.docs.map((d) => WeightEntry.fromMap(d.data())).toList();
   }
+
+  Future<void> updateUserProfile(UserModel user) async {
+  await _db.collection('users').doc(user.uid).update({
+    'name':             user.name,
+    'goal':             user.goal,
+    'currentWeight':    user.currentWeight,
+    'targetWeight':     user.targetWeight,
+    'dailyCalorieGoal': user.dailyCalorieGoal,
+  });
+}
 }
