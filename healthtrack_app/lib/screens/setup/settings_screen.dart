@@ -28,8 +28,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Health profile
   late TextEditingController _weightCtrl;
   late TextEditingController _targetCtrl;
-  late TextEditingController _calorieCtrl;
   late String _goal;
+  double _activityFactor = 1.2;
 
   // Notifications
   bool _dailyFoodReminder = true;
@@ -39,6 +39,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _saving = false;
 
   final _goals = ['Lose Weight', 'Stay Fit', 'Build Muscle'];
+
+  final _activityLevels = const [
+    {
+      'label':       'Sedentary',
+      'description': 'Little or no exercise',
+      'factor':      1.2,
+      'icon':        Icons.chair_outlined,
+    },
+    {
+      'label':       'Lightly Active',
+      'description': '1–3 days/week',
+      'factor':      1.375,
+      'icon':        Icons.directions_walk,
+    },
+    {
+      'label':       'Moderately Active',
+      'description': '3–5 days/week',
+      'factor':      1.55,
+      'icon':        Icons.directions_bike_outlined,
+    },
+    {
+      'label':       'Very Active',
+      'description': '6–7 days/week',
+      'factor':      1.725,
+      'icon':        Icons.fitness_center,
+    },
+    {
+      'label':       'Super Active',
+      'description': 'Physical job + training',
+      'factor':      1.9,
+      'icon':        Icons.bolt,
+    },
+  ];
 
   @override
   void initState() {
@@ -50,9 +83,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       text: user.currentWeight.toStringAsFixed(1));
     _targetCtrl  = TextEditingController(
       text: user.targetWeight.toStringAsFixed(1));
-    _calorieCtrl = TextEditingController(
-      text: user.dailyCalorieGoal.toStringAsFixed(0));
-    _goal = user.goal;
+    _goal        = user.goal;
   }
 
   @override
@@ -64,7 +95,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _confirmPassCtrl.dispose();
     _weightCtrl.dispose();
     _targetCtrl.dispose();
-    _calorieCtrl.dispose();
     super.dispose();
   }
 
@@ -90,11 +120,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
       name.isNotEmpty ? name.codeUnitAt(0) % colors.length : 0];
   }
 
+  // ── Calorie calculation ──────────────────────────────────
+  double _calculateCalories() {
+    final user   = context.read<UserProvider>().user!;
+    final weight = double.tryParse(_weightCtrl.text) ?? user.currentWeight;
+    final height = user.heightCm;
+    final age    = user.age.toDouble();
+
+    double bmr;
+    if (user.gender == 'male') {
+      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+    } else {
+      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+    }
+
+    final tdee = bmr * _activityFactor;
+
+    if (_goal == 'Lose Weight')  return tdee - 500;
+    if (_goal == 'Build Muscle') return tdee + 300;
+    return tdee;
+  }
+
   // ── Save profile ─────────────────────────────────────────
   Future<void> _saveProfile() async {
     setState(() => _saving = true);
     try {
       final user    = context.read<UserProvider>().user!;
+      final calories = _calculateCalories();
+
       final updated = UserModel(
         uid:              user.uid,
         email:            user.email,
@@ -107,8 +160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         heightCm:         user.heightCm,
         age:              user.age,
         gender:           user.gender,
-        dailyCalorieGoal: double.tryParse(_calorieCtrl.text)
-                          ?? user.dailyCalorieGoal,
+        dailyCalorieGoal: calories,
         streak:           user.streak,
         lastActiveDate:   user.lastActiveDate,
         healthScore:      user.healthScore,
@@ -133,7 +185,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
     if (_newPassCtrl.text.length < 6) {
-      _showSnack('Password must be at least 6 characters.', AppColors.danger);
+      _showSnack('Password must be at least 6 characters.',
+        AppColors.danger);
       return;
     }
     try {
@@ -256,9 +309,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showSnack(String msg, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content:         Text(msg),
-        backgroundColor: color));
+      SnackBar(content: Text(msg), backgroundColor: color));
   }
 
   // ── Build ────────────────────────────────────────────────
@@ -267,6 +318,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final user        = context.watch<UserProvider>().user!;
     final avatarColor = _avatarColor(user.name);
     final initials    = _initials(user.name);
+    final calories    = _calculateCalories();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -312,8 +364,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       shape:  BoxShape.circle,
                       color:  avatarColor.withValues(alpha: 0.2),
                       border: Border.all(
-                        color: avatarColor, width: 2.5),
-                    ),
+                        color: avatarColor, width: 2.5)),
                     child: Center(
                       child: Text(initials,
                         style: TextStyle(
@@ -331,7 +382,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 4),
                   Text(user.email,
                     style: const TextStyle(
-                      color:   AppColors.textSecondary,
+                      color:    AppColors.textSecondary,
                       fontSize: 13)),
                   const SizedBox(height: 6),
                   Container(
@@ -391,7 +442,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 controller: _weightCtrl,
                 type: const TextInputType.numberWithOptions(
                   decimal: true),
-                suffix: 'kg',
+                suffix:   'kg',
+                onChange: () => setState(() {}),
               ),
               const _CardDivider(),
               _FieldTile(
@@ -403,14 +455,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 suffix: 'kg',
               ),
               const _CardDivider(),
-              _FieldTile(
-                icon:       Icons.local_fire_department_outlined,
-                label:      'Daily Calorie Goal',
-                controller: _calorieCtrl,
-                type:       TextInputType.number,
-                suffix:     'kcal',
-              ),
-              const _CardDivider(),
+
               // Fitness goal selector
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -423,15 +468,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10)),
-                        child: const Icon(
-                          Icons.flag_outlined,
-                          color: AppColors.primary,
-                          size:  18),
+                        child: const Icon(Icons.flag_outlined,
+                          color: AppColors.primary, size: 18),
                       ),
                       const SizedBox(width: 14),
                       const Text('Fitness Goal',
                         style: TextStyle(
-                          color:    AppColors.textSecondary,
+                          color: AppColors.textSecondary,
                           fontSize: 14)),
                     ]),
                     const SizedBox(height: 12),
@@ -440,8 +483,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: GestureDetector(
                           onTap: () => setState(() => _goal = g),
                           child: AnimatedContainer(
-                            duration:
-                              const Duration(milliseconds: 200),
+                            duration: const Duration(milliseconds: 200),
                             margin: const EdgeInsets.only(right: 6),
                             padding: const EdgeInsets.symmetric(
                               vertical: 10),
@@ -449,8 +491,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               color: _goal == g
                                 ? AppColors.primary
                                 : AppColors.surface,
-                              borderRadius:
-                                BorderRadius.circular(10)),
+                              borderRadius: BorderRadius.circular(10)),
                             child: Text(g,
                               textAlign: TextAlign.center,
                               style: TextStyle(
@@ -467,6 +508,128 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ],
                 ),
+              ),
+              const _CardDivider(),
+
+              // Activity level selector
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Container(
+                        width: 36, height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10)),
+                        child: const Icon(Icons.directions_run,
+                          color: AppColors.primary, size: 18),
+                      ),
+                      const SizedBox(width: 14),
+                      const Text('Activity Level',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 14)),
+                    ]),
+                    const SizedBox(height: 12),
+                    ..._activityLevels.map((level) {
+                      final selected =
+                        _activityFactor == level['factor'] as double;
+                      return GestureDetector(
+                        onTap: () => setState(() =>
+                          _activityFactor = level['factor'] as double),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: selected
+                              ? AppColors.primary.withValues(alpha: 0.15)
+                              : AppColors.surface,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: selected
+                                ? AppColors.primary
+                                : Colors.transparent,
+                              width: 1.5)),
+                          child: Row(children: [
+                            Icon(
+                              level['icon'] as IconData,
+                              color: selected
+                                ? AppColors.primary
+                                : AppColors.textSecondary,
+                              size: 18),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                                children: [
+                                  Text(level['label'] as String,
+                                    style: TextStyle(
+                                      color: selected
+                                        ? AppColors.primary
+                                        : AppColors.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13)),
+                                  Text(level['description'] as String,
+                                    style: const TextStyle(
+                                      color:    AppColors.textSecondary,
+                                      fontSize: 11)),
+                                ],
+                              ),
+                            ),
+                            if (selected)
+                              const Icon(Icons.check_circle,
+                                color: AppColors.primary, size: 18),
+                          ]),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+              const _CardDivider(),
+
+              // Calculated calorie display — read only
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 14),
+                child: Row(children: [
+                  Container(
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10)),
+                    child: const Icon(
+                      Icons.local_fire_department_outlined,
+                      color: AppColors.warning, size: 18),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Daily Calorie Goal',
+                          style: TextStyle(
+                            color:    AppColors.textSecondary,
+                            fontSize: 14)),
+                        Text('Auto-calculated from your stats',
+                          style: TextStyle(
+                            color:    AppColors.textSecondary,
+                            fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '${calories.toStringAsFixed(0)} kcal',
+                    style: const TextStyle(
+                      color:      AppColors.primary,
+                      fontSize:   15,
+                      fontWeight: FontWeight.bold)),
+                ]),
               ),
             ]),
             const SizedBox(height: 24),
@@ -509,9 +672,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               height: 52,
               child: OutlinedButton.icon(
                 onPressed: _confirmLogout,
-                icon: const Icon(
-                  Icons.logout,
-                  color: AppColors.danger),
+                icon: const Icon(Icons.logout, color: AppColors.danger),
                 label: const Text('Log Out',
                   style: TextStyle(
                     color:      AppColors.danger,
@@ -576,6 +737,7 @@ class _FieldTile extends StatelessWidget {
   final String                suffix;
   final bool                  readOnly;
   final String                hint;
+  final VoidCallback?         onChange;
 
   const _FieldTile({
     required this.icon,
@@ -585,12 +747,12 @@ class _FieldTile extends StatelessWidget {
     this.suffix   = '',
     this.readOnly = false,
     this.hint     = '',
+    this.onChange,
   });
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(
-      horizontal: 16, vertical: 4),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     child: Row(children: [
       Container(
         width: 36, height: 36,
@@ -605,6 +767,7 @@ class _FieldTile extends StatelessWidget {
           controller:   controller,
           keyboardType: type,
           readOnly:     readOnly,
+          onChanged:    onChange != null ? (_) => onChange!() : null,
           style: TextStyle(
             color: readOnly
               ? AppColors.textSecondary
@@ -614,12 +777,10 @@ class _FieldTile extends StatelessWidget {
             labelText:  label,
             hintText:   hint.isNotEmpty ? hint : null,
             hintStyle:  const TextStyle(
-              color:    AppColors.textSecondary,
-              fontSize: 12),
+              color: AppColors.textSecondary, fontSize: 12),
             suffixText:  suffix,
             suffixStyle: const TextStyle(
-              color:    AppColors.textSecondary,
-              fontSize: 13),
+              color: AppColors.textSecondary, fontSize: 13),
             filled:         false,
             border:         InputBorder.none,
             enabledBorder:  InputBorder.none,
@@ -649,13 +810,12 @@ class _TapTile extends StatelessWidget {
   Widget build(BuildContext context) => GestureDetector(
     onTap: onTap,
     child: Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Row(children: [
         Container(
           width: 36, height: 36,
           decoration: BoxDecoration(
-            color:        AppColors.primary.withValues(alpha:  0.1),
+            color:        AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10)),
           child: Icon(icon, color: AppColors.primary, size: 18),
         ),
@@ -663,8 +823,7 @@ class _TapTile extends StatelessWidget {
         Expanded(
           child: Text(label,
             style: const TextStyle(
-              color:    AppColors.textPrimary,
-              fontSize: 14))),
+              color: AppColors.textPrimary, fontSize: 14))),
         trailing,
       ]),
     ),
@@ -688,13 +847,12 @@ class _ToggleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(
-      horizontal: 16, vertical: 12),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     child: Row(children: [
       Container(
         width: 36, height: 36,
         decoration: BoxDecoration(
-          color:        AppColors.primary.withValues(alpha:  0.1),
+          color:        AppColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10)),
         child: Icon(icon, color: AppColors.primary, size: 18),
       ),
@@ -705,20 +863,18 @@ class _ToggleTile extends StatelessWidget {
           children: [
             Text(label,
               style: const TextStyle(
-                color:    AppColors.textPrimary,
-                fontSize: 14)),
+                color: AppColors.textPrimary, fontSize: 14)),
             const SizedBox(height: 2),
             Text(subtitle,
               style: const TextStyle(
-                color:    AppColors.textSecondary,
-                fontSize: 11)),
+                color: AppColors.textSecondary, fontSize: 11)),
           ],
         ),
       ),
       Switch(
         value:              value,
         onChanged:          onChanged,
-        activeThumbColor:        AppColors.primary,
+        activeThumbColor:   AppColors.primary,
         inactiveTrackColor: AppColors.surface,
       ),
     ]),
@@ -748,8 +904,7 @@ class _PassField extends StatelessWidget {
       suffixIcon: IconButton(
         icon: Icon(
           obscure ? Icons.visibility_off : Icons.visibility,
-          color: AppColors.textSecondary,
-          size:  18),
+          color: AppColors.textSecondary, size: 18),
         onPressed: onToggle,
       ),
     ),
