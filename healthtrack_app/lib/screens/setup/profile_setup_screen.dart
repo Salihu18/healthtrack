@@ -4,7 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../services/auth_service.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/food_provider.dart';
-import '../../main.dart';
+import '../../screens/dashboard/dashboard_screen.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   final String name, email, password;
@@ -111,9 +111,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       if (!mounted) return;
       context.read<UserProvider>().setUser(user);
       context.read<FoodProvider>().listenToToday(user.uid);
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const AuthWrapper()),
-        (route) => false,
+      // ADD this:
+     Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      (route) => false,
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

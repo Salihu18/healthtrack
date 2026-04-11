@@ -36,7 +36,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _streakReminder    = true;
   bool _weeklyProgress    = true;
 
-  bool _saving = false;
+  bool _saving      = false;
+  bool _initialized = false;
 
   final _goals = ['Lose Weight', 'Stay Fit', 'Build Muscle'];
 
@@ -76,7 +77,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    final user   = context.read<UserProvider>().user!;
+    final user = context.read<UserProvider>().user;
+    if (user == null) {
+      // Controllers need default values when user is null
+      _nameCtrl    = TextEditingController();
+      _emailCtrl   = TextEditingController();
+      _weightCtrl  = TextEditingController(text: '70');
+      _targetCtrl  = TextEditingController(text: '65');
+      _goal        = 'Lose Weight';
+      return;
+    }
     _nameCtrl    = TextEditingController(text: user.name);
     _emailCtrl   = TextEditingController(text: user.email);
     _weightCtrl  = TextEditingController(
@@ -84,6 +94,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _targetCtrl  = TextEditingController(
       text: user.targetWeight.toStringAsFixed(1));
     _goal        = user.goal;
+    _initialized = true;
   }
 
   @override
@@ -122,7 +133,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Calorie calculation ──────────────────────────────────
   double _calculateCalories() {
-    final user   = context.read<UserProvider>().user!;
+    final user = context.read<UserProvider>().user;
+    if (user == null) return 2000;
+
     final weight = double.tryParse(_weightCtrl.text) ?? user.currentWeight;
     final height = user.heightCm;
     final age    = user.age.toDouble();
@@ -143,9 +156,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Save profile ─────────────────────────────────────────
   Future<void> _saveProfile() async {
+    final user = context.read<UserProvider>().user;
+    if (user == null) return;
+
     setState(() => _saving = true);
     try {
-      final user    = context.read<UserProvider>().user!;
       final calories = _calculateCalories();
 
       final updated = UserModel(
@@ -315,7 +330,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ── Build ────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final user        = context.watch<UserProvider>().user!;
+    final user = context.watch<UserProvider>().user;
+
+    // Show spinner while user is loading
+    if (user == null) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary)),
+      );
+    }
+
+    // Sync controllers if they were not initialized yet
+    if (!_initialized) {
+      _nameCtrl.text   = user.name;
+      _emailCtrl.text  = user.email;
+      _weightCtrl.text = user.currentWeight.toStringAsFixed(1);
+      _targetCtrl.text = user.targetWeight.toStringAsFixed(1);
+      _goal            = user.goal;
+      _initialized     = true;
+    }
+
     final avatarColor = _avatarColor(user.name);
     final initials    = _initials(user.name);
     final calories    = _calculateCalories();
@@ -593,7 +628,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const _CardDivider(),
 
-              // Calculated calorie display — read only
+              // Calculated calorie display
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16, vertical: 14),
