@@ -28,11 +28,22 @@ class UserProvider extends ChangeNotifier {
         // Update streak and health score on every session
         _user = await _fs.refreshUserSession(_user!);
 
-        // Fetch AI tip — if it fails, show a default. Never crash the app.
+        // Fetch AI coaching tip
+        // If API fails, fall back to rule-based insight
         try {
-          _aiTip = await AiService.getHealthInsight(_user!);
+          final coaching = await AiService.getDailyCoaching(
+            user:          _user!,
+            caloriesToday: 0,
+            mealsLogged:   0,
+          );
+          if (coaching != null) {
+            _aiTip = coaching['main_advice']
+                     ?? AiService.getFallbackInsight(_user!);
+          } else {
+            _aiTip = AiService.getFallbackInsight(_user!);
+          }
         } catch (_) {
-          _aiTip = 'Stay consistent — every healthy choice adds up!';
+          _aiTip = AiService.getFallbackInsight(_user!);
         }
       }
     } catch (e) {
