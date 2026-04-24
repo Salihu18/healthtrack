@@ -50,6 +50,18 @@ groq_client     = None
 async def load_resources():
     global nutrition_model, norm_stats, groq_client
 
+
+     # Auto-train if model does not exist
+    if not os.path.exists("model/food_model.pth"):
+        print("Model not found — running training...")
+        import subprocess
+        subprocess.run(["python", "data/prepare_dataset.py"])
+        subprocess.run(["python", "model/train.py"])
+        print("Training complete")
+
+    # Load model
+    print("Loading Mini LLM...")
+
     # Load PyTorch mini LLM
     print("Loading Mini LLM (PyTorch)...")
     nutrition_model = FoodNutritionLLM()
