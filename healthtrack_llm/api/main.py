@@ -29,7 +29,7 @@ from model.model import FoodNutritionLLM, FoodTokenizer
 # ── App setup ─────────────────────────────────────────────────────────────────
 app = FastAPI(
     title=       "HealthTrack Nutrition API",
-    description: "Mini LLM + Groq LLaMA 3 for health advice",
+    description= "Mini LLM + Groq LLaMA 3 for health advice",
     version=     "2.0.0",
 )
 
